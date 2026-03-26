@@ -7,6 +7,8 @@ export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 interface AuthContextType {
   status: AuthStatus;
   user: User | null;
+  isAuthSplashDone: boolean;
+  setSplashDone: () => void;
   signIn: (loginResponse: LoginResponse) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -20,6 +22,11 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [user, setUser] = useState<User | null>(null);
+  const [isAuthSplashDone, setIsAuthSplashDone] = useState(false);
+
+  const setSplashDone = () => {
+    setIsAuthSplashDone(true);
+  };
 
   // Check auth on mount
   useEffect(() => {
@@ -62,7 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return (
-    <AuthContext.Provider value={{ status, user, signIn, signOut }}>
+    <AuthContext.Provider value={{ status, user, isAuthSplashDone, setSplashDone, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

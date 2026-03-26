@@ -1,415 +1,403 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
+  Alert,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
+import ScreenWrapper from '../components/ui/ScreenWrapper';
+import Card from '../components/ui/Card';
+import PillSelect from '../components/ui/PillSelect';
+import Badge from '../components/ui/Badge';
+import GradientButton from '../components/ui/GradientButton';
 import { useAttendance } from '../hooks/useAttendance';
-
-/**
- * Format ISO timestamp to readable time format
- */
-const formatTime = (isoString: string | undefined): string => {
-  if (!isoString) return '--:--';
-  try {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true,
-    });
-  } catch {
-    return '--:--';
-  }
-};
-
-/**
- * Format coordinates for display
- */
-const formatCoordinates = (
-  latitude: number | undefined,
-  longitude: number | undefined
-): string => {
-  if (!latitude || !longitude) return 'No location data';
-  return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-};
-
-/**
- * Format accuracy in meters
- */
-const formatAccuracy = (accuracy: number | undefined): string => {
-  if (!accuracy) return 'N/A';
-  return `±${Math.round(accuracy)}m`;
-};
+import { Colors, Typography, BorderRadius, Spacing } from '../../constants/theme';
 
 export default function AttendanceScreen() {
-  const {
-    isCheckedIn,
-    loading,
-    error,
-    attendanceData,
-    currentLocation,
-    handleCheckIn,
-    handleCheckOut,
-    refreshLocation,
-  } = useAttendance();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { attendance, isLoading, checkIn, checkOut } = useAttendance();
+  const [availability, setAvailability] = useState<
+    'available' | 'idle' | 'offline'
+  >('available');
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [location, setLocation] = useState<string>('Office HQ, San Francisco');
 
-  const onCheckIn = async () => {
-    setSuccessMessage(null);
-    await handleCheckIn();
-    if (!error) {
-      setSuccessMessage('Successfully checked in!');
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const statusCheckIn = attendance?.checkInTime && !attendance?.checkOutTime;
+    setIsCheckedIn(Boolean(statusCheckIn));
+  }, [attendance]);
+
+  const handleCheckIn = async () => {
+    try {
+      let coords = null;
+      const locPermission = await Location.requestForegroundPermissionsAsync();
+      if (locPermission.granted) {
+        const loc = await Location.getCurrentPositionAsync({});
+        coords = loc.coords;
+      }
+
+      await checkIn({
+        location: location,
+        coordinates: coords,
+        mode: availability === 'available' ? 'office' : 'wfh',
+      });
+
+      Alert.alert('Success', 'Checked in successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to check in');
     }
   };
 
-  const onCheckOut = async () => {
-    setSuccessMessage(null);
-    await handleCheckOut();
-    if (!error) {
-      setSuccessMessage('Successfully checked out!');
+  const handleCheckOut = async () => {
+    try {
+      await checkOut();
+      Alert.alert('Success', 'Checked out successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to check out');
     }
   };
+
+  const availabilityOptions = [
+    {
+      id: 'available',
+      label: 'Available',
+      variant: 'success' as const,
+      icon: (
+        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success.base }} />
+      ),
+    },
+    {
+      id: 'idle',
+      label: 'Idle',
+      variant: 'warning' as const,
+      icon: (
+        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.warning.base }} />
+      ),
+    },
+    {
+      id: 'offline',
+      label: 'Offline',
+      variant: 'error' as const,
+      icon: (
+        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.error.base }} />
+      ),
+    },
+  ];
+
+  const clockDisplay = currentTime.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  const dateDisplay = currentTime.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.container}>
-          <View style={styles.content}>
-            {/* Status Icon */}
-            <View
-              style={[
-                styles.statusIcon,
-                isCheckedIn
-                  ? styles.statusCheckedIn
-                  : styles.statusCheckedOut,
-              ]}
-            >
-              <Text style={styles.statusEmoji}>
-                {isCheckedIn ? '✓' : '○'}
-              </Text>
-            </View>
-
-            {/* Status Text */}
-            <Text style={styles.statusText}>
-              {isCheckedIn ? 'You are checked in' : 'You are not checked in'}
-            </Text>
-
-            {/* Attendance Details */}
-            {isCheckedIn && attendanceData && (
-              <View style={styles.detailsContainer}>
-                {/* Check-in Time */}
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Check-in Time</Text>
-                  <Text style={styles.detailValue}>
-                    {formatTime(attendanceData.checkInTime)}
-                  </Text>
-                </View>
-
-                {/* GPS Coordinates */}
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Location (GPS)</Text>
-                  <Text style={styles.detailValue}>
-                    {formatCoordinates(
-                      attendanceData.location?.latitude,
-                      attendanceData.location?.longitude
-                    )}
-                  </Text>
-                </View>
-
-                {/* Accuracy */}
-                {attendanceData.location && (
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Accuracy</Text>
-                    <Text style={styles.detailValue}>
-                      {formatAccuracy(attendanceData.location.accuracy)}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Check-out Time (if checked out) */}
-                {attendanceData.checkOutTime && (
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Check-out Time</Text>
-                    <Text style={styles.detailValue}>
-                      {formatTime(attendanceData.checkOutTime)}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
-
-            {/* Current Location Display */}
-            {!isCheckedIn && (
-              <View style={styles.currentLocationContainer}>
-                <Text style={styles.currentLocationTitle}>Current Location</Text>
-
-                {currentLocation ? (
-                  <View style={styles.locationDetails}>
-                    <Text style={styles.locationText}>
-                      {formatCoordinates(currentLocation.latitude, currentLocation.longitude)}
-                    </Text>
-                    <Text style={styles.accuracyText}>
-                      Accuracy: {formatAccuracy(currentLocation.accuracy)}
-                    </Text>
-                  </View>
-                ) : (
-                  <Text style={styles.noLocationText}>Location not available</Text>
-                )}
-
-                <TouchableOpacity
-                  style={styles.refreshButton}
-                  onPress={refreshLocation}
-                  disabled={loading}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.refreshButtonText}>Refresh Location</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Success Message */}
-            {successMessage && (
-              <View style={styles.successContainer}>
-                <Text style={styles.successText}>{successMessage}</Text>
-              </View>
-            )}
-
-            {/* Error Message */}
-            {error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
-
-            {/* Action Button */}
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#1976d2" />
-                <Text style={styles.loadingText}>Processing...</Text>
-              </View>
-            ) : isCheckedIn ? (
-              <TouchableOpacity
-                style={[styles.button, styles.checkOutButton]}
-                onPress={onCheckOut}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.buttonText}>Check Out</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[styles.button, styles.checkInButton]}
-                onPress={onCheckIn}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.buttonText}>Check In</Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Info Text */}
-            <Text style={styles.infoText}>
-              {isCheckedIn
-                ? 'Your GPS location is automatically captured and recorded with your check-in. Tap the button above to record your check-out time.'
-                : 'Tap the button above to record your check-in time. Your GPS location will be automatically captured.'}
-            </Text>
+    <ScreenWrapper noPadding>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>Attendance</Text>
+            <Text style={styles.subtitle}>Manage status & check-in</Text>
           </View>
         </View>
+
+        {/* Availability Status */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Set availability status</Text>
+          <PillSelect
+            options={availabilityOptions}
+            selectedId={availability}
+            onSelect={(id) => setAvailability(id as any)}
+          />
+        </View>
+
+        {/* Session Card */}
+        <Card style={styles.sessionCard}>
+          <Text style={styles.cardLabel}>Today's Session</Text>
+
+          <Text style={styles.clockDisplay}>{clockDisplay}</Text>
+          <Text style={styles.clockDate}>{dateDisplay}</Text>
+
+          {isLoading ? (
+            <ActivityIndicator
+              size="large"
+              color={Colors.accent.blue}
+              style={styles.loader}
+            />
+          ) : (
+            <>
+              <LinearGradient
+                colors={isCheckedIn ? Colors.gradients.ctaGreen : Colors.gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.checkInButtonGradient}
+              >
+                <TouchableOpacity
+                  style={styles.checkInButton}
+                  onPress={isCheckedIn ? handleCheckOut : handleCheckIn}
+                >
+                  <Feather
+                    name={isCheckedIn ? 'log-out' : 'log-in'}
+                    size={16}
+                    color="white"
+                  />
+                  <Text style={styles.checkInButtonText}>
+                    {isCheckedIn ? 'Check Out' : 'Check In Now'}
+                  </Text>
+                </TouchableOpacity>
+              </LinearGradient>
+
+              {/* Location Verification */}
+              <View style={styles.geoRow}>
+                <View style={styles.geoBadge}>
+                  <Feather name="map-pin" size={10} color={Colors.text.muted} />
+                  <Text style={styles.geoBadgeText}>{location}</Text>
+                </View>
+                <View style={styles.verificationBadge}>
+                  <Feather name="shield" size={10} color={Colors.success.base} />
+                  <Text style={styles.verificationText}>Verified</Text>
+                </View>
+              </View>
+            </>
+          )}
+        </Card>
+
+        {/* Face Recognition */}
+        <Card style={styles.faceCard}>
+          <View style={styles.faceContent}>
+            <View style={styles.facePreview}>
+              <Feather name="user-check" size={20} color={Colors.text.secondary} />
+            </View>
+            <View style={styles.faceInfo}>
+              <Text style={styles.faceTitle}>Face Recognition</Text>
+              <Text style={styles.faceSub}>
+                {isCheckedIn ? 'Enabled' : 'Optional verification'}
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.faceButton}>
+              <Text style={styles.faceButtonText}>Scan</Text>
+            </TouchableOpacity>
+          </View>
+        </Card>
+
+        {/* Session Summary */}
+        <View style={styles.sessionRow}>
+          <Card style={styles.sessBox}>
+            <Text style={styles.sessLabel}>Login Time</Text>
+            <Text style={styles.sessValue}>
+              {attendance?.checkInTime
+                ? new Date(attendance.checkInTime).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                  })
+                : '--:--'}
+            </Text>
+          </Card>
+          <Card style={styles.sessBox}>
+            <Text style={styles.sessLabel}>Active Hours</Text>
+            <Text style={styles.sessValue}>
+              {attendance?.activeTime || '0h 0m'}
+            </Text>
+          </Card>
+          <Card style={styles.sessBox}>
+            <Text style={styles.sessLabel}>Idle Hours</Text>
+            <Text style={styles.sessValue}>
+              {attendance?.idleTime || '0h 0m'}
+            </Text>
+          </Card>
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
+  scrollContent: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.xl,
+    gap: Spacing.lg,
   },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
+  header: {
+    marginBottom: Spacing.lg,
   },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
+  title: {
+    fontSize: Typography.fontSize['2xl'],
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.text.primary,
+  },
+  subtitle: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.text.muted,
+    marginTop: Spacing.xs,
+  },
+  section: {
+    gap: Spacing.md,
+  },
+  sectionLabel: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.text.muted,
+    fontWeight: Typography.fontWeight.medium,
+    marginBottom: Spacing.sm,
+  },
+  sessionCard: {
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: Spacing.lg,
+    gap: Spacing.md,
   },
-  content: {
-    alignItems: 'center',
+  cardLabel: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.text.muted,
+  },
+  clockDisplay: {
+    fontSize: Typography.fontSize['5xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.text.primary,
+    letterSpacing: -1,
+  },
+  clockDate: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.text.muted,
+  },
+  loader: {
+    marginVertical: Spacing.xl,
+  },
+  checkInButtonGradient: {
+    borderRadius: BorderRadius.xl,
     width: '100%',
-    maxWidth: 350,
-  },
-  statusIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  statusCheckedIn: {
-    backgroundColor: '#e8f5e9',
-    borderWidth: 3,
-    borderColor: '#4caf50',
-  },
-  statusCheckedOut: {
-    backgroundColor: '#fafafa',
-    borderWidth: 3,
-    borderColor: '#9e9e9e',
-  },
-  statusEmoji: {
-    fontSize: 40,
-  },
-  statusText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 20,
-  },
-  detailsContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4caf50',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  detailLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    flex: 1,
-  },
-  detailValue: {
-    fontSize: 13,
-    color: '#333',
-    flex: 1.2,
-    textAlign: 'right',
-    fontFamily: 'monospace',
-  },
-  successContainer: {
-    backgroundColor: '#e8f5e9',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    width: '100%',
-  },
-  successText: {
-    color: '#2e7d32',
-    fontSize: 14,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  errorContainer: {
-    backgroundColor: '#ffebee',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    width: '100%',
-  },
-  errorText: {
-    color: '#c62828',
-    fontSize: 14,
-    textAlign: 'center',
-    fontWeight: '500',
-    lineHeight: 20,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-  },
-  button: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 16,
   },
   checkInButton: {
-    backgroundColor: '#1976d2',
-  },
-  checkOutButton: {
-    backgroundColor: '#dc3545',
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  currentLocationContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#1976d2',
-  },
-  currentLocationTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  locationDetails: {
-    width: '100%',
-    marginBottom: 12,
-  },
-  locationText: {
-    fontSize: 13,
-    color: '#333',
-    fontFamily: 'monospace',
-    marginBottom: 8,
-  },
-  accuracyText: {
-    fontSize: 13,
-    color: '#666',
-  },
-  noLocationText: {
-    fontSize: 13,
-    color: '#999',
-    marginBottom: 12,
-  },
-  refreshButton: {
-    width: '100%',
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#1976d2',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
   },
-  refreshButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
+  checkInButtonText: {
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.semibold,
+    color: '#fff',
+  },
+  geoRow: {
+    width: '100%',
+    gap: Spacing.sm,
+  },
+  geoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.background.elevated,
+    borderColor: Colors.border.light,
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  geoBadgeText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.text.muted,
+  },
+  verificationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.success.bg,
+    borderColor: Colors.success.border,
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  verificationText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.success.base,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  faceCard: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  faceContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.lg,
+  },
+  facePreview: {
+    width: 44,
+    height: 44,
+    backgroundColor: Colors.background.base,
+    borderColor: Colors.border.lighter,
+    borderWidth: 1,
+    borderRadius: BorderRadius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  faceInfo: {
+    flex: 1,
+    gap: Spacing.xs,
+  },
+  faceTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.medium,
+    color: Colors.text.primary,
+  },
+  faceSub: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.text.muted,
+  },
+  faceButton: {
+    backgroundColor: Colors.info.bg,
+    borderColor: Colors.info.border,
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  faceButtonText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.accent.lightBlue,
+  },
+  sessionRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  sessBox: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+  },
+  sessLabel: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.text.hint,
+  },
+  sessValue: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.text.primary,
+    marginTop: Spacing.xs,
   },
 });

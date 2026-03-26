@@ -4,18 +4,15 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import DashboardScreen from '../screens/DashboardScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
 import LeaveScreen from '../screens/LeaveScreen';
-import WFHScreen from '../screens/WFHScreen';
-import ChatListScreen from '../screens/ChatListScreen';
 import NotificationScreen from '../screens/NotificationScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import CustomBottomTabBar from '../components/ui/CustomBottomTabBar';
 
 export type MainTabParamList = {
   Dashboard: undefined;
   Attendance: undefined;
   Leave: undefined;
-  WFH: undefined;
-  Chat: undefined;
-  Notifications: undefined;
+  Alerts: undefined;
   Profile: undefined;
 };
 
@@ -25,16 +22,36 @@ export default function MainTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: true,
+        headerShown: false,
+        tabBarVisible: true,
       }}
+      tabBar={(props) => <CustomBottomTabBar {...props} />}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Attendance" component={AttendanceScreen} />
-      <Tab.Screen name="Leave" component={LeaveScreen} />
-      <Tab.Screen name="WFH" component={WFHScreen} />
-      <Tab.Screen name="Chat" component={ChatListScreen} />
-      <Tab.Screen name="Notifications" component={NotificationScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen
+        name="Dashboard"
+        component={DashboardScreen}
+        options={{ title: 'Dashboard' }}
+      />
+      <Tab.Screen
+        name="Attendance"
+        component={AttendanceScreen}
+        options={{ title: 'Attendance' }}
+      />
+      <Tab.Screen
+        name="Leave"
+        component={LeaveScreen}
+        options={{ title: 'Leave' }}
+      />
+      <Tab.Screen
+        name="Alerts"
+        component={NotificationScreen}
+        options={{ title: 'Alerts' }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: 'Profile' }}
+      />
     </Tab.Navigator>
   );
 }

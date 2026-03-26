@@ -4,11 +4,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
+import SplashScreen from '../screens/SplashScreen';
 import MainTabNavigator from './MainTabNavigator';
 import ChatRoomScreen from '../screens/ChatRoomScreen';
 import AttendanceHistoryScreen from '../screens/AttendanceHistoryScreen';
 
 export type RootStackParamList = {
+  Splash: undefined;
   Login: undefined;
   Main: undefined;
   ChatRoom: { conversationId: string; title?: string };
@@ -18,8 +20,9 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
-  const { status } = useAuth();
+  const { status, isAuthSplashDone } = useAuth();
 
+  // Show loading indicator while checking auth status
   if (status === 'loading') {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -29,17 +32,28 @@ export default function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator>
-      {status !== 'authenticated' ? (
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isAuthSplashDone ? (
+        // Always show splash first
+        <Stack.Screen 
+          name="Splash" 
+          component={SplashScreen} 
+          options={{ animationEnabled: false }}
+        />
+      ) : status !== 'authenticated' ? (
+        <Stack.Screen name="Login" component={LoginScreen} />
       ) : (
         <>
-          <Stack.Screen name="Main" component={MainTabNavigator} options={{ headerShown: false }} />
-          <Stack.Screen name="ChatRoom" component={ChatRoomScreen} options={{ title: 'Chat' }} />
+          <Stack.Screen name="Main" component={MainTabNavigator} />
+          <Stack.Screen 
+            name="ChatRoom" 
+            component={ChatRoomScreen} 
+            options={{ title: 'Chat', headerShown: true }}
+          />
           <Stack.Screen
             name="AttendanceHistory"
             component={AttendanceHistoryScreen}
-            options={{ title: 'Attendance History' }}
+            options={{ title: 'Attendance History', headerShown: true }}
           />
         </>
       )}

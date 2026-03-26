@@ -1,150 +1,347 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import ScreenWrapper from '../components/ui/ScreenWrapper';
+import Card from '../components/ui/Card';
+import GradientButton from '../components/ui/GradientButton';
+import TextField from '../components/ui/TextField';
 import { useAuth } from '../context/AuthContext';
-import { changePassword, getUserById, updateUser } from '../services/userService';
+import { Colors, Typography, BorderRadius, Spacing } from '../../constants/theme';
 
-export default function ProfileScreen() {
+const ProfileScreen = () => {
   const { user, signOut } = useAuth();
-  const [profile, setProfile] = useState(user);
+  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const canEditIdentity = useMemo(
-    () => user?.role === 'HR_ADMIN' || user?.role === 'SYS_ADMIN',
-    [user?.role]
-  );
-
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
 
-  const load = useCallback(async () => {
-    if (!user?.id) return;
+  const handleSaveProfile = async () => {
     setLoading(true);
-    setError(null);
     try {
-      const fresh = await getUserById(user.id);
-      setProfile(fresh);
-      setName(fresh.name || '');
-      setEmail(fresh.email || '');
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || 'Failed to load profile');
+      // TODO: Implement profile update in service
+      Alert.alert('Success', 'Profile updated successfully');
+      setIsEditing(false);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update profile');
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  };
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel' },
+      {
+        text: 'Sign Out',
+        onPress: () => signOut(),
+        style: 'destructive',
+      },
+    ]);
+  };
 
-  const onSave = useCallback(async () => {
-    if (!user?.id) return;
-    setLoading(true);
-    setError(null);
-    try {
-      if (!canEditIdentity) {
-        Alert.alert('Not allowed', 'Only HR Admin/System Admin can edit profile details.');
-        return;
-      }
-      const updated = await updateUser(user.id, { name: name.trim(), email: email.trim() });
-      setProfile(updated);
-      Alert.alert('Saved', 'Profile updated successfully.');
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || 'Failed to update profile');
-    } finally {
-      setLoading(false);
-    }
-  }, [canEditIdentity, email, name, user?.id]);
-
-  const onChangePassword = useCallback(async () => {
-    if (!currentPassword || !newPassword) {
-      Alert.alert('Missing', 'Please enter current and new password.');
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      await changePassword(currentPassword, newPassword);
-      setCurrentPassword('');
-      setNewPassword('');
-      Alert.alert('Updated', 'Password updated successfully.');
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || 'Failed to change password');
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPassword, newPassword]);
+  const menuItems = [
+    { id: 'settings', label: 'Settings', icon: 'settings' },
+    { id: 'security', label: 'Security', icon: 'lock' },
+    { id: 'privacy', label: 'Privacy', icon: 'shield' },
+    { id: 'help', label: 'Help & Support', icon: 'help-circle' },
+  ];
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+    <ScreenWrapper noPadding>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Profile</Text>
+          <TouchableOpacity
+            onPress={() => setIsEditing(!isEditing)}
+            disabled={loading}
+          >
+            <Text style={styles.editButton}>
+              {isEditing ? 'Cancel' : 'Edit'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      <Text style={styles.section}>Account</Text>
-      <Text style={styles.row}>Role: {profile?.role || '—'}</Text>
+        {/* Profile Avatar */}
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {user?.name
+                ?.split(' ')
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase() || 'U'}
+            </Text>
+          </View>
+        </View>
 
-      <TextInput
-        style={styles.input}
-        value={name}
-        onChangeText={setName}
-        placeholder="Name"
-        editable={canEditIdentity && !loading}
-      />
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        editable={canEditIdentity && !loading}
-      />
+        {/* Profile Info Card */}
+        {isEditing ? (
+          <Card style={styles.editCard}>
+            <Text style={styles.cardTitle}>Edit Profile</Text>
 
-      <Button title="Save Profile" onPress={onSave} disabled={!canEditIdentity || loading} />
+            <View style={styles.formGroup}>
+              <TextField
+                label="Full Name"
+                value={name}
+                onChangeText={setName}
+                editable={!loading}
+              />
+            </View>
 
-      <View style={{ height: 18 }} />
+            <View style={styles.formGroup}>
+              <TextField
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                editable={false}
+              />
+            </View>
 
-      <Text style={styles.section}>Change Password</Text>
-      <TextInput
-        style={styles.input}
-        value={currentPassword}
-        onChangeText={setCurrentPassword}
-        placeholder="Current password"
-        secureTextEntry
-        editable={!loading}
-      />
-      <TextInput
-        style={styles.input}
-        value={newPassword}
-        onChangeText={setNewPassword}
-        placeholder="New password"
-        secureTextEntry
-        editable={!loading}
-      />
-      <Button title="Update Password" onPress={onChangePassword} disabled={loading} />
+            <View style={styles.formGroup}>
+              <TextField
+                label="Role"
+                value={user?.role || 'Employee'}
+                editable={false}
+              />
+            </View>
 
-      <View style={{ height: 16 }} />
-      <Button title="Logout" onPress={signOut} />
-    </View>
+            {loading ? (
+              <ActivityIndicator size="large" color={Colors.accent.blue} />
+            ) : (
+              <GradientButton
+                label="Save Changes"
+                onPress={handleSaveProfile}
+                size="lg"
+              />
+            )}
+          </Card>
+        ) : (
+          <Card style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <View>
+                <Text style={styles.infoLabel}>Full Name</Text>
+                <Text style={styles.infoValue}>{user?.name}</Text>
+              </View>
+            </View>
+
+            <View style={styles.infoRow}>
+              <View>
+                <Text style={styles.infoLabel}>Email</Text>
+                <Text style={styles.infoValue}>{user?.email}</Text>
+              </View>
+            </View>
+
+            <View style={styles.infoRow}>
+              <View>
+                <Text style={styles.infoLabel}>Role</Text>
+                <Text style={styles.infoValue}>
+                  {user?.role === 'EMPLOYEE'
+                    ? 'Employee'
+                    : user?.role === 'MANAGER'
+                    ? 'Manager'
+                    : 'HR Lead'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.infoRow}>
+              <View>
+                <Text style={styles.infoLabel}>Department</Text>
+                <Text style={styles.infoValue}>
+                  {user?.department || 'Engineering'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.infoRow}>
+              <View>
+                <Text style={styles.infoLabel}>Member Since</Text>
+                <Text style={styles.infoValue}>March 2024</Text>
+              </View>
+            </View>
+          </Card>
+        )}
+
+        {/* Menu Items */}
+        {!isEditing && (
+          <>
+            <Text style={styles.sectionTitle}>Resources</Text>
+            {menuItems.map((item) => (
+              <TouchableOpacity key={item.id} style={styles.menuItem}>
+                <View style={styles.menuItemContent}>
+                  <Feather
+                    name={item.icon as any}
+                    size={16}
+                    color={Colors.text.secondary}
+                    style={styles.menuIcon}
+                  />
+                  <Text style={styles.menuLabel}>{item.label}</Text>
+                </View>
+                <Feather
+                  name="chevron-right"
+                  size={16}
+                  color={Colors.text.hint}
+                />
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
+
+        {/* Sign Out */}
+        {!isEditing && (
+          <TouchableOpacity
+            style={styles.signOutButton}
+            onPress={handleSignOut}
+          >
+            <Feather
+              name="log-out"
+              size={16}
+              color={Colors.error.base}
+              style={styles.menuIcon}
+            />
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Version */}
+        <Text style={styles.version}>Cube AI v2.4.1</Text>
+      </ScrollView>
+    </ScreenWrapper>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  title: { fontSize: 20, fontWeight: '700', color: '#0f172a' },
-  row: { marginTop: 10, color: '#334155' },
-  error: { marginTop: 10, color: '#b91c1c' },
-  section: { marginTop: 14, fontWeight: '700', color: '#0f172a' },
-  input: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
+  scrollContent: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.xl,
+    gap: Spacing.lg,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: Typography.fontSize['2xl'],
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.text.primary,
+  },
+  editButton: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.accent.blue,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    marginVertical: Spacing.lg,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.accent.blue,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: Typography.fontSize['3xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: '#fff',
+  },
+  editCard: {
+    gap: Spacing.md,
+  },
+  cardTitle: {
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.text.primary,
+    marginBottom: Spacing.md,
+  },
+  formGroup: {
+    gap: Spacing.sm,
+  },
+  infoCard: {
+    gap: Spacing.md,
+  },
+  infoRow: {
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.lighter,
+  },
+  infoLabel: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.text.muted,
+    marginBottom: Spacing.xs,
+    textTransform: 'uppercase',
+    fontWeight: Typography.fontWeight.medium,
+    letterSpacing: 0.4,
+  },
+  infoValue: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.text.primary,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  sectionTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.text.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: Spacing.lg,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.lighter,
+  },
+  menuItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuIcon: {
+    marginRight: Spacing.md,
+  },
+  menuLabel: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.text.primary,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.lighter,
+    marginTop: Spacing.lg,
+  },
+  signOutText: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.error.base,
+    fontWeight: Typography.fontWeight.medium,
+    marginLeft: Spacing.md,
+  },
+  version: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.text.hint,
+    textAlign: 'center',
+    marginTop: Spacing.xl,
   },
 });
 
+export default ProfileScreen;

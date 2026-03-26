@@ -55,20 +55,34 @@ api.interceptors.response.use(
     // Handle different types of errors
     if (error.response) {
       // Server responded with error status (4xx, 5xx)
-      console.error(
-        `❌ API Error (${error.response.status}):`,
-        error.response.data,
-      );
+      console.error("\n❌ API ERROR (Server Responded):");
+      console.error(`   Status: ${error.response.status}`);
+      console.error(`   URL: ${error.config?.url}`);
+      console.error(`   Method: ${error.config?.method?.toUpperCase()}`);
+      console.error("   Response:", JSON.stringify(error.response.data, null, 2));
     } else if (error.request) {
-      // Request made but no response received
-      console.error("❌ No response from server:", error.request);
-      console.error("⚠️  Make sure:");
-      console.error("   1. Backend is running on http://<IP>:5000");
-      console.error("   2. LOCAL_IP in src/config/api.ts is correctly set");
-      console.error("   3. Device and backend are on the same network");
+      // Request made but no response received (Network error)
+      console.error("\n❌ NETWORK ERROR (No Response from Server):");
+      console.error(`   URL: ${error.config?.url}`);
+      console.error(`   Method: ${error.config?.method?.toUpperCase()}`);
+      console.error("   Message:", error.message);
+      console.error("\n🔧 TROUBLESHOOTING:");
+      console.error("   1. ✅ Is backend running?");
+      console.error("      Check: npm run server (in backend folder)");
+      console.error("   2. ✅ Correct IP address?");
+      console.error("      Run: ipconfig (Windows) or ifconfig (Mac/Linux)");
+      console.error("      Update LOCAL_IP in src/config/api.ts if needed");
+      console.error("   3. ✅ Same WiFi network?");
+      console.error("      Device must be on same network as backend");
+      console.error("   4. ✅ Backend port correct?");
+      console.error("      Ensure it's running on port 5000");
+      console.error("   5. ✅ Firewall blocking?");
+      console.error("      Check Windows Firewall allows port 5000");
     } else {
       // Error in request setup
-      console.error("❌ Request error:", error.message);
+      console.error("\n❌ REQUEST ERROR:");
+      console.error("   Message:", error.message);
+      console.error("   Config:", error.config);
     }
     return Promise.reject(error);
   },

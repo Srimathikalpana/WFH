@@ -25,7 +25,7 @@ import { Platform } from "react-native";
  */
 
 const BACKEND_PORT = 5000;
-const LOCAL_IP = "192.168.1.25"; // CHANGE THIS to your laptop's IP address
+const LOCAL_IP = "10.98.56.228"; // CHANGE THIS to your laptop's IP address
 const DEPLOYED_BACKEND_URL = process.env.EXPO_PUBLIC_DEPLOYED_API_URL || "";
 
 // ============================================================================
@@ -67,12 +67,18 @@ export const API_CONFIG = {
 // ============================================================================
 
 if (__DEV__) {
-  console.log("📱 API Configuration:");
+  console.log("\n🔗 API CONFIGURATION:");
   console.log(`   Platform: ${Platform.OS}`);
   console.log(`   Backend Port: ${BACKEND_PORT}`);
   console.log(`   Local IP: ${LOCAL_IP}`);
   console.log(`   API URL: ${API_CONFIG.BASE_URL}`);
   console.log(`   Socket URL: ${API_CONFIG.SOCKET_URL}`);
+  console.log("\n⚠️  DEBUGGING TIPS:");
+  console.log("   1. Make sure backend is running: npm run server");
+  console.log("   2. Verify LOCAL_IP matches your laptop: ipconfig (Windows)");
+  console.log("   3. Check device is on same WiFi network");
+  console.log("   4. Try ping: ping " + LOCAL_IP);
+  console.log("\n");
 }
 
 export default API_CONFIG;
