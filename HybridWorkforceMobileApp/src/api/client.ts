@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosError, AxiosInstance } from "axios";
-import { API_TIMEOUT, API_URL } from "../config/env";
+import { API_TIMEOUT, API_URL } from "./config";
 
 /**
  * Axios instance for API calls

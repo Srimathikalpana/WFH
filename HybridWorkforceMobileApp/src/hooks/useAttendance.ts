@@ -6,7 +6,7 @@ import {
   CheckInResult,
   getTodaySession,
   AttendanceSession,
-} from '../services/attendanceService';
+} from '../api/attendance';
 import {
   LocationData,
   getLocationErrorMessage,

@@ -25,7 +25,7 @@ import { Platform } from "react-native";
  */
 
 const BACKEND_PORT = 5000;
-const LOCAL_IP = "10.1.224.192"; // CHANGE THIS to your laptop's IP address
+const LOCAL_IP = "10.98.56.228"; // CHANGE THIS to your laptop's IP address
 const DEPLOYED_BACKEND_URL = process.env.EXPO_PUBLIC_DEPLOYED_API_URL || "";
 
 // ============================================================================
@@ -61,6 +61,13 @@ export const API_CONFIG = {
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000, // 1 second
 };
+
+// Flattened exports for easier imports
+export const API_URL = API_CONFIG.BASE_URL;
+export const SOCKET_URL = API_CONFIG.SOCKET_URL;
+export const API_TIMEOUT = API_CONFIG.TIMEOUT;
+export const API_RETRY_ATTEMPTS = API_CONFIG.RETRY_ATTEMPTS;
+export const API_RETRY_DELAY = API_CONFIG.RETRY_DELAY;
 
 // ============================================================================
 // For Debugging: Log the current API configuration

@@ -1,4 +1,4 @@
-import api from './api';
+import api from './client';
 
 // Types
 export type UserRole = 'EMPLOYEE' | 'MANAGER' | 'HR_ADMIN' | 'SYS_ADMIN';

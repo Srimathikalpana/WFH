@@ -5,7 +5,7 @@ import {
   applyLeave,
   getMyLeaves,
   LeavePayload,
-} from '../services/leaveService';
+} from '../api/leave';
 import { LeaveRequest } from '../types/leave';
 
 interface UseLeaveReturn {

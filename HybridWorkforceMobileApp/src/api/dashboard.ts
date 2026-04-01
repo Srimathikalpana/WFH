@@ -1,5 +1,5 @@
-import api from './api';
-import { UserRole } from './authService';
+import api from './client';
+import { UserRole } from './auth';
 
 export type DashboardStats = Record<string, any>;
 

@@ -14,7 +14,7 @@ import ScreenWrapper from '../components/ui/ScreenWrapper';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import GradientButton from '../components/ui/GradientButton';
-import { getDashboard } from '../services/dashboardService';
+import { getDashboard } from '../api/dashboard';
 import { Colors, Typography, BorderRadius, Spacing } from '../../constants/theme';
 
 interface ActivityItem {

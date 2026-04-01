@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
 import { useStatus } from "../hooks/useStatus";
-import { Status } from "../services/statusService";
+import { Status } from "../api/status";
 
 const STATUS_OPTIONS: Array<{ label: string; value: Status; color: string }> = [
   { label: "Available", value: "AVAILABLE", color: "#4CAF50" },

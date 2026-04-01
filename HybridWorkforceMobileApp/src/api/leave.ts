@@ -2,7 +2,7 @@
 // src/services/leaveService.ts
 // Real backend service for applying and fetching leaves/WFH requests
 
-import api from './api';
+import api from './client';
 import { LeaveRequest } from '../types/leave.ts';
 
 // payload sent when creating a new leave/wfh request

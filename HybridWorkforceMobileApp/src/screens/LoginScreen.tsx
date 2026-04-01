@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { login } from '../services/authService';
+import { login } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 import ScreenWrapper from '../components/ui/ScreenWrapper';
 import TextField from '../components/ui/TextField';

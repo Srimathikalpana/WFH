@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import ScreenWrapper from '../components/ui/ScreenWrapper';
 import TextField from '../components/ui/TextField';
 import GradientButton from '../components/ui/GradientButton';
-import { getConversations } from '../services/chatService';
+import { getConversations } from '../api/chat';
 import { Colors, Typography, BorderRadius, Spacing } from '../../constants/theme';
 
 interface ChatItem {
@@ -41,7 +41,14 @@ const ChatListScreen = () => {
     setError(null);
     try {
       const conversations = await getConversations();
-      setChats(conversations);
+      const mappedChats = conversations.map((conv: any) => ({
+        ...conv,
+        participants: conv.participants.map((p: any) => ({
+          name: p.name,
+          id: p._id,
+        })),
+      }));
+      setChats(mappedChats as ChatItem[]);
     } catch (e: any) {
       setError(
         e?.response?.data?.message || e?.message || 'Failed to load chats'
@@ -101,7 +108,7 @@ const ChatListScreen = () => {
       <TouchableOpacity
         style={[
           styles.chatItem,
-          item.unreadCount && item.unreadCount > 0 && styles.chatItemUnread,
+          item.unreadCount && item.unreadCount > 0 ? styles.chatItemUnread : null,
         ]}
         onPress={() =>
           navigation.navigate('ChatRoom', {
@@ -119,7 +126,7 @@ const ChatListScreen = () => {
         >
           {item.type === 'group' || item.type === 'announcement' ? (
             <Feather
-              name={item.type === 'announcement' ? 'megaphone' : 'users'}
+              name={item.type === 'announcement' ? 'bell' : 'users'}
               size={16}
               color="white"
             />
@@ -135,9 +142,9 @@ const ChatListScreen = () => {
             <Text
               style={[
                 styles.chatName,
-                item.unreadCount &&
-                  item.unreadCount > 0 &&
-                  styles.chatNameUnread,
+                item.unreadCount && item.unreadCount > 0
+                  ? styles.chatNameUnread
+                  : undefined,
               ]}
               numberOfLines={1}
             >
@@ -151,9 +158,9 @@ const ChatListScreen = () => {
             <Text
               style={[
                 styles.chatPreview,
-                item.unreadCount &&
-                  item.unreadCount > 0 &&
-                  styles.chatPreviewUnread,
+                item.unreadCount && item.unreadCount > 0
+                  ? styles.chatPreviewUnread
+                  : undefined,
               ]}
               numberOfLines={1}
             >

@@ -4,8 +4,9 @@ import {
   StyleSheet,
   ViewStyle,
   StatusBar,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, Edges } from 'react-native-safe-area-context';
 import { Colors, Spacing } from '../../../constants/theme';
 
 interface ScreenWrapperProps {
@@ -15,6 +16,7 @@ interface ScreenWrapperProps {
   noPaddingTop?: boolean;
   noPaddingBottom?: boolean;
   padding?: number;
+  edges?: Edges;
 }
 
 export default function ScreenWrapper({
@@ -24,6 +26,7 @@ export default function ScreenWrapper({
   noPaddingTop = false,
   noPaddingBottom = false,
   padding,
+  edges, // Default to all edges
 }: ScreenWrapperProps) {
   const getPaddingStyles = () => {
     if (noPadding) return {};
@@ -42,8 +45,12 @@ export default function ScreenWrapper({
   };
 
   return (
-    <SafeAreaView style={[styles.container, style]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background.base} />
+    <SafeAreaView edges={edges} style={[styles.container, style]}>
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor="transparent" 
+        translucent 
+      />
       <View style={[styles.content, getPaddingStyles()]}>
         {children}
       </View>

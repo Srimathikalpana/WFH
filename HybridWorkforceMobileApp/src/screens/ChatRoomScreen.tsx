@@ -11,8 +11,8 @@ import {
   View,
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import { ChatMessage, getMessages } from '../services/chatService';
-import { connectChatSocket, disconnectChatSocket } from '../services/chatSocket';
+import { ChatMessage, getMessages } from '../api/chat';
+import { connectChatSocket, disconnectChatSocket } from '../api/socket';
 import { getToken } from '../utils/authStorage';
 import { useAuth } from '../context/AuthContext';
 

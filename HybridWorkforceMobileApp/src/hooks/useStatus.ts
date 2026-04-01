@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { updateStatus, Status } from "../services/statusService";
+import { updateStatus, Status } from "../api/status";
 
 // re-export type for convenience
 export type { Status };

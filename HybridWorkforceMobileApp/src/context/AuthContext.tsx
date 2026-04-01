@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getToken, saveToken, clearToken } from '../utils/authStorage';
-import { getCurrentUser, User, LoginResponse } from '../services/authService';
+import { getCurrentUser, User, LoginResponse } from '../api/auth';
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 

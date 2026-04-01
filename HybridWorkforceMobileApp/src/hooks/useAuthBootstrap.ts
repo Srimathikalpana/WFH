@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getToken, clearToken } from '../utils/authStorage';
-import { getCurrentUser, User } from '../services/authService';
+import { getCurrentUser, User } from '../api/auth';
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 

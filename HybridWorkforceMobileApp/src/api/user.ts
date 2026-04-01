@@ -1,5 +1,5 @@
-import api from './api';
-import { User } from './authService';
+import api from './client';
+import { User } from './auth';
 
 export async function getUserById(id: string): Promise<User> {
   const { data } = await api.get<{ user: User }>('/users/' + id);

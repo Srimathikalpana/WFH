@@ -9,6 +9,7 @@ import {
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import { Colors, Typography, BorderRadius, Spacing } from '../../../constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const getIcon = (name: string, focused: boolean) => {
   const color = focused ? Colors.accent.blue : Colors.text.hint;
@@ -33,7 +34,7 @@ export default function CustomBottomTabBar({
   const focusedOptions = descriptors[state.routes[state.index].key].options;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView edges={['bottom']} style={styles.container}>
       <View style={styles.tabBar}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
@@ -97,13 +98,13 @@ export default function CustomBottomTabBar({
           );
         })}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.background.base,
+    backgroundColor: Colors.navBar,
     borderTopColor: Colors.navBarBorder,
     borderTopWidth: 1,
   },
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.sm,
-    paddingBottom: Platform.OS === 'ios' ? Spacing.md : Spacing.sm,
+    paddingBottom: Spacing.sm,
   },
   tabItem: {
     flex: 1,
